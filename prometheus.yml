@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s  # Intervalo de scraping global
+
+scrape_configs:
+  - job_name: 'api_monitoring'
+    static_configs:
+      - targets: ['api_monitoring:8000']  # Cambia esto según el puerto y servicio que estés utilizando

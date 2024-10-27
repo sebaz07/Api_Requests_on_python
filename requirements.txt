@@ -1,0 +1,4 @@
+requests
+prometheus-client
+certifi
+urllib3
