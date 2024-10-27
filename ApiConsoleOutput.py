@@ -4,6 +4,7 @@ from colorama import Fore, Back, Style, init
 import urllib3
 from urllib3.exceptions import InsecureRequestWarning
 from requests.exceptions import Timeout, HTTPError, RequestException
+from tqdm import tqdm  # Importar tqdm para la barra de progreso
 
 # Importar listas de APIs desde los archivos
 from Api_Groups.apis_group1 import api_list as api_group1
@@ -30,7 +31,7 @@ api_groups = {
 
 def validate_apis(api_group_name, api_list):
     results = []
-    for api in api_list:
+    for api in tqdm(api_list, desc=f"Validating {api_group_name} APIs"):
         start_time = time.time()  # Tiempo de inicio
         try:
             # Hacer la solicitud con un tiempo máximo de espera
@@ -46,6 +47,13 @@ def validate_apis(api_group_name, api_list):
                     "API": api,
                     "Status": status_code,
                     "Result": "Success",
+                    "Response Time (s)": response_time
+                }
+            elif 300 <= status_code < 400:
+                result = {
+                    "API": api,
+                    "Status": status_code,
+                    "Result": "Redirection",
                     "Response Time (s)": response_time
                 }
             elif 400 <= status_code < 500:
@@ -66,42 +74,20 @@ def validate_apis(api_group_name, api_list):
                 result = {
                     "API": api,
                     "Status": status_code,
-                    "Result": "Unexpected Status",
+                    "Result": "Unknown",
                     "Response Time (s)": response_time
                 }
-
-        except Timeout:
-            end_time = time.time()  # Tiempo de fin
-            response_time = end_time - start_time  # Tiempo de respuesta
-            result = {
-                "API": api,
-                "Status": "N/A",
-                "Result": "Timeout",
-                "Error": "The request timed out",
-                "Response Time (s)": response_time
-            }
-        except HTTPError as http_err:
+            results.append(result)
+        except requests.exceptions.RequestException as e:
             end_time = time.time()
-            response_time = end_time - start_time
             result = {
                 "API": api,
-                "Status": "N/A",
-                "Result": "HTTP Error",
-                "Error": str(http_err),
-                "Response Time (s)": response_time
-            }
-        except RequestException as req_err:
-            end_time = time.time()
-            response_time = end_time - start_time
-            result = {
-                "API": api,
-                "Status": "N/A",
+                "Status": "Failed",
                 "Result": "Failed",
-                "Error": str(req_err),
-                "Response Time (s)": response_time
+                "Error": str(e),
+                "Response Time (s)": end_time - start_time
             }
-
-        results.append(result)
+            results.append(result)
 
     print_results(api_group_name, results)
 
